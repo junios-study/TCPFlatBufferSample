@@ -98,7 +98,7 @@ void UTCPClientSubsystem::RecvAll()
 	uint16 PacketSize = 0;
 	while (ServerSocket->HasPendingData(Pending))
 	{
-		if (ServerSocket->Recv((uint8*)&PacketSize, sizeof(PacketSize), RecvBytes) || RecvBytes == 0)
+		if (!ServerSocket->Recv((uint8*)&PacketSize, sizeof(PacketSize), RecvBytes) || RecvBytes == 0)
 		{
 			Disconnect();
 			break;
@@ -115,7 +115,7 @@ void UTCPClientSubsystem::RecvAll()
 	//Body
 	while (ServerSocket->HasPendingData(Pending))
 	{
-		if (ServerSocket->Recv(RecvBuffer.GetData(), PacketSize, RecvBytes) || RecvBytes == 0)
+		if (!ServerSocket->Recv(RecvBuffer.GetData(), PacketSize, RecvBytes) || RecvBytes == 0)
 		{
 			Disconnect();
 			break;
@@ -138,13 +138,10 @@ void UTCPClientSubsystem::RecvAll()
 bool UTCPClientSubsystem::SendAll(const uint8* Body, uint32 BodyLength)
 {
 	TArray<uint8> Packet;
-	//[][] [][][][][][][]
+
 	Packet.Reserve(2 + BodyLength);
-	//[][] -> Header
-	FMemory::Memcpy(Packet.GetData(), &BodyLength, 2);
-	//Packet.Add((uint8)((BodyLength >> 8) & 0xFF));
-	//Packet.Add((uint8)((BodyLength) & 0xFF));
-	Packet.SetNum(2);
+	Packet.Add((uint8)((BodyLength >> 8) & 0xFF));
+	Packet.Add((uint8)((BodyLength) & 0xFF));
 	Packet.Append(Body, BodyLength);
 
 	int32 SentTotalBytes = 0;
