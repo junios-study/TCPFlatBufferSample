@@ -8,8 +8,9 @@ public class TCPFlatBufferSampleTarget : TargetRules
 	public TCPFlatBufferSampleTarget(TargetInfo Target) : base(Target)
 	{
 		Type = TargetType.Game;
-		DefaultBuildSettings = BuildSettingsVersion.V6;
+		DefaultBuildSettings = BuildSettingsVersion.Latest;
+        IncludeOrderVersion = EngineIncludeOrderVersion.Latest;
 
-		ExtraModuleNames.AddRange( new string[] { "TCPFlatBufferSample" } );
+        ExtraModuleNames.AddRange( new string[] { "TCPFlatBufferSample" } );
 	}
 }
