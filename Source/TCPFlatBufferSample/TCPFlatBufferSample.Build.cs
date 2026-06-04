@@ -10,7 +10,14 @@ public class TCPFlatBufferSample : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 	
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
+		PublicDependencyModuleNames.AddRange(new string[] { 
+			"Core",
+			"CoreUObject",
+			"Engine",
+			"InputCore",
+			"Sockets",			//BSD Socket Warpper
+			"Networking"
+		});
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 
