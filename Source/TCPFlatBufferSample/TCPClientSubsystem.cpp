@@ -11,9 +11,14 @@
 
 bool UTCPClientSubsystem::Connect(const FString& Host, int32 Port)
 {
+	//WSStartup
 	//OS별 소켓 생성 시스템
 	ISocketSubsystem* SocketSubSystem = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
 
+	//socket
+	//SOCKADDR
+
+	//hostent
 	//getaddrinfo()
 	FAddressInfoResult AddrInfo = SocketSubSystem->GetAddressInfo(*Host, nullptr, EAddressInfoFlags::Default, NAME_None);
 
@@ -33,7 +38,7 @@ bool UTCPClientSubsystem::Connect(const FString& Host, int32 Port)
 		return false;
 	}
 
-	RecvBuffer.Reset();
+	ServerSocket->SetNonBlocking(false);
 
 	OnTCPConnected.Broadcast();
 
@@ -59,6 +64,7 @@ bool UTCPClientSubsystem::IsConncted() const
 {
 	return ServerSocket != nullptr && ServerSocket->GetConnectionState() == SCS_Connected;
 }
+
 
 void UTCPClientSubsystem::SendLogin(const FString& UserID, const FString& Password)
 {
@@ -91,52 +97,52 @@ void UTCPClientSubsystem::RecvAll()
 		return;
 	}
 
-	//1. 2byte 헤더 받기
 	uint32 Pending = 0;
-	
-	int32 RecvBytes = 0;
-	uint16 PacketSize = 0;
-	while (ServerSocket->HasPendingData(Pending))
+	if (!ServerSocket->HasPendingData(Pending))
 	{
-		if (!ServerSocket->Recv((uint8*)&PacketSize, sizeof(PacketSize), RecvBytes) || RecvBytes == 0)
+		return;
+	}
+
+	// 누가 공격 하지 않는다.
+	//1. 2byte 헤더 받기
+	uint16 NetPacketSize = 0; //BigEndian
+	uint16 PacketSize = 0; //LitteleEndian
+	int32 TotalRecvBytes = 0;
+	int32 RecvBytes = 0;
+	//2바이트 받았냐?
+	while (TotalRecvBytes < (int32)(NetPacketSize))
+	{
+		if (!ServerSocket->Recv((uint8*)&NetPacketSize + TotalRecvBytes, sizeof(NetPacketSize) - TotalRecvBytes, RecvBytes) || RecvBytes == 0)
 		{
 			Disconnect();
 			break;
 		}
-
-		if (RecvBytes == 2)
-		{
-			break;
-		}
+		TotalRecvBytes += RecvBytes;
 	}
-
-
+	PacketSize = NETWORK_ORDER16(NetPacketSize);
 
 	//Body
-	while (ServerSocket->HasPendingData(Pending))
+	RecvBuffer.SetNumUninitialized(PacketSize);
+	TotalRecvBytes = 0;
+	RecvBytes = 0;
+	while (TotalRecvBytes < (int32)(PacketSize))
 	{
-		if (!ServerSocket->Recv(RecvBuffer.GetData(), PacketSize, RecvBytes) || RecvBytes == 0)
+		if (!ServerSocket->Recv(RecvBuffer.GetData() + TotalRecvBytes, PacketSize - TotalRecvBytes, RecvBytes) || RecvBytes == 0)
 		{
 			Disconnect();
 			break;
 		}
-
-		if (RecvBytes == PacketSize)
-		{
-			break;
-		}
+		TotalRecvBytes += RecvBytes;
 	}
 
-	if (RecvBytes > 0)
-	{
-		RecvBuffer.SetNum(RecvBytes);
-		DispatchPacket();
-		RecvBuffer.Reset();
-	}
+	DispatchPacket();
+	RecvBuffer.Reset();
+
 }
 
 bool UTCPClientSubsystem::SendAll(const uint8* Body, uint32 BodyLength)
 {
+	//char Buffer[2 + BodyLength];
 	TArray<uint8> Packet;
 
 	Packet.Reserve(2 + BodyLength);
@@ -148,7 +154,7 @@ bool UTCPClientSubsystem::SendAll(const uint8* Body, uint32 BodyLength)
 	while (SentTotalBytes < Packet.Num())
 	{
 		int32 SentBytes = 0;
-		if (ServerSocket->Send(Packet.GetData() + SentTotalBytes, Packet.Num() - SentTotalBytes, SentBytes) || SentBytes < 0)
+		if (!ServerSocket->Send(Packet.GetData() + SentTotalBytes, Packet.Num() - SentTotalBytes, SentBytes) || SentBytes < 0)
 		{
 			return false;
 		}
