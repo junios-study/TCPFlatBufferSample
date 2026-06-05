@@ -57,9 +57,16 @@ UTCPClientSubsystem* ATCPTestActor::GetTCP()
 
 void ATCPTestActor::HandleConnected()
 {
+	UE_LOG(LogTemp, Warning, TEXT("Connected Server"));
+
+	UTCPClientSubsystem* TCP = GetTCP();
+
+	TCP->SendLogin(TEXT("junios"), TEXT("1234"));
 }
 
 void ATCPTestActor::HandleDisconnect()
 {
+
+	UE_LOG(LogTemp, Warning, TEXT("Disonnected Server"));
 }
 
