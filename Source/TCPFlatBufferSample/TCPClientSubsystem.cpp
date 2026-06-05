@@ -97,6 +97,10 @@ void UTCPClientSubsystem::SendLogin(const FString& UserID, const FString& Passwo
 	SendAll(Builder.GetBufferPointer(), Builder.GetSize());
 }
 
+void UTCPClientSubsystem::SendSignUp(const FString& UserID, const FString& Password)
+{
+}
+
 void UTCPClientSubsystem::RecvAll()
 {
 	if (!IsConncted())

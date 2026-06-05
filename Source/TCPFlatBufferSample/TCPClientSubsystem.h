@@ -13,6 +13,8 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTCPConnected);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTCPDisconnected);
 
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnLogined, )
+
 
 class FSocket;
 
@@ -45,7 +47,12 @@ public:
 	FOnTCPDisconnected OnTCPDisconnected;
 
 
+	UFUNCTION(BlueprintCallable, Category = "TCP")
 	void SendLogin(const FString& UserID, const FString& Password);
+
+
+	UFUNCTION(BlueprintCallable, Category = "TCP")
+	void SendSignUp(const FString& UserID, const FString& Password);
 
 
 
