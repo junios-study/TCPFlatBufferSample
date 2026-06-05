@@ -26,6 +26,9 @@ class TCPFLATBUFFERSAMPLE_API UTCPClientSubsystem : public UGameInstanceSubsyste
 	GENERATED_BODY()
 public:
 
+	virtual void Deinitialize() override;
+
+
 	UFUNCTION(BlueprintCallable, Category = "TCP")
 	bool Connect(const FString& Host, int32 Port);
 

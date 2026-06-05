@@ -9,6 +9,13 @@
 
 #include "UserPacket_generated.h"
 
+void UTCPClientSubsystem::Deinitialize()
+{
+	Disconnect();
+
+	Super::Deinitialize();
+}
+
 bool UTCPClientSubsystem::Connect(const FString& Host, int32 Port)
 {
 	//WSStartup
@@ -92,25 +99,24 @@ void UTCPClientSubsystem::SendLogin(const FString& UserID, const FString& Passwo
 
 void UTCPClientSubsystem::RecvAll()
 {
-	if (!ServerSocket)
+	if (!IsConncted())
 	{
 		return;
 	}
 
 	uint32 Pending = 0;
-	if (!ServerSocket->HasPendingData(Pending))
+	if (!ServerSocket->HasPendingData(Pending) || Pending <= 0)
 	{
 		return;
 	}
 
-	// 누가 공격 하지 않는다.
 	//1. 2byte 헤더 받기
 	uint16 NetPacketSize = 0; //BigEndian
 	uint16 PacketSize = 0; //LitteleEndian
 	int32 TotalRecvBytes = 0;
 	int32 RecvBytes = 0;
 	//2바이트 받았냐?
-	while (TotalRecvBytes < (int32)(NetPacketSize))
+	while (TotalRecvBytes < (int32)sizeof(NetPacketSize))
 	{
 		if (!ServerSocket->Recv((uint8*)&NetPacketSize + TotalRecvBytes, sizeof(NetPacketSize) - TotalRecvBytes, RecvBytes) || RecvBytes == 0)
 		{
@@ -120,6 +126,7 @@ void UTCPClientSubsystem::RecvAll()
 		TotalRecvBytes += RecvBytes;
 	}
 	PacketSize = NETWORK_ORDER16(NetPacketSize);
+
 
 	//Body
 	RecvBuffer.SetNumUninitialized(PacketSize);
@@ -176,7 +183,7 @@ void UTCPClientSubsystem::DispatchPacket()
 		//Delegate로 바꿈
 		const auto* LoginData = UserPacketData->data_as_S2C_Login();
 		
-		FString Message = LoginData->message() ? UTF8_TO_TCHAR(LoginData->message()) : FString();
+		FString Message = UTF8_TO_TCHAR(LoginData->message()->c_str());
 
 		UE_LOG(LogTemp, Warning, TEXT("Login %d %s"), LoginData->client_socket_id(),  *Message);
 	}

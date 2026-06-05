@@ -61,7 +61,7 @@ void ATCPTestActor::HandleConnected()
 
 	UTCPClientSubsystem* TCP = GetTCP();
 
-	TCP->SendLogin(TEXT("junios"), TEXT("1234"));
+	TCP->SendLogin(TEXT("junios"), TEXT("12345"));
 }
 
 void ATCPTestActor::HandleDisconnect()
