@@ -77,8 +77,8 @@ void UTCPClientSubsystem::SendLogin(const FString& UserID, const FString& Passwo
 {
 	flatbuffers::FlatBufferBuilder Builder;
 
-	const FTCHARToUTF8 UserUTF8(UserID);
-	const FTCHARToUTF8 PasswordUTF8(Password);
+	const FTCHARToUTF8 UserUTF8(*UserID);
+	const FTCHARToUTF8 PasswordUTF8(*Password);
 
 	auto LoginData = UserPacket::CreateC2S_LoginDirect(
 		Builder,
