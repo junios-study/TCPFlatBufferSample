@@ -55,14 +55,16 @@ bool UTCPClientSubsystem::Connect(const FString& Host, int32 Port)
 
 void UTCPClientSubsystem::Disconnect()
 {
-	ISocketSubsystem* SocketSubSystem = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
+	if (ServerSocket)
+	{
+		ISocketSubsystem* SocketSubSystem = ISocketSubsystem::Get(PLATFORM_SOCKETSUBSYSTEM);
 
-	//closesocket
-	ServerSocket->Close();
-	SocketSubSystem->DestroySocket(ServerSocket);
+		//closesocket
+		ServerSocket->Close();
+		SocketSubSystem->DestroySocket(ServerSocket);
 
-	ServerSocket = nullptr;
-
+		ServerSocket = nullptr;
+	}
 
 	OnTCPDisconnected.Broadcast();
 }
@@ -97,8 +99,30 @@ void UTCPClientSubsystem::SendLogin(const FString& UserID, const FString& Passwo
 	SendAll(Builder.GetBufferPointer(), Builder.GetSize());
 }
 
-void UTCPClientSubsystem::SendSignUp(const FString& UserID, const FString& Password)
+void UTCPClientSubsystem::SendSignUp(const FString& UserID, const FString& Password, const FString& Name)
 {
+	flatbuffers::FlatBufferBuilder Builder;
+
+	const FTCHARToUTF8 UserUTF8(*UserID);
+	const FTCHARToUTF8 PasswordUTF8(*Password);
+	const FTCHARToUTF8 NameUTF(*Password);
+
+	auto LoginData = UserPacket::CreateC2S_SignupDirect(
+		Builder,
+		UserUTF8.Get(),
+		PasswordUTF8.Get(),
+		NameUTF.Get()
+	);
+
+	auto PacketData = UserPacket::CreatePacketData(
+		Builder,
+		UserPacket::PacketType_C2S_Signup,
+		LoginData.Union()
+	);
+
+	Builder.Finish(PacketData);
+
+	SendAll(Builder.GetBufferPointer(), Builder.GetSize());
 }
 
 void UTCPClientSubsystem::RecvAll()
@@ -184,12 +208,13 @@ void UTCPClientSubsystem::DispatchPacket()
 	{
 	case UserPacket::PacketType_S2C_Login:
 	{
-		//Delegate·Î ¹Ù²Ş
 		const auto* LoginData = UserPacketData->data_as_S2C_Login();
 		
 		FString Message = UTF8_TO_TCHAR(LoginData->message()->c_str());
 
 		UE_LOG(LogTemp, Warning, TEXT("Login %d %s"), LoginData->client_socket_id(),  *Message);
+
+		OnLogin.Broadcast(LoginData->success(), Message);
 	}
 	break;
 	case UserPacket::PacketType_S2C_Spawn:
@@ -213,11 +238,14 @@ void UTCPClientSubsystem::DispatchPacket()
 
 	case UserPacket::PacketType_S2C_Signup:
 	{
-		auto SignupPacket = UserPacketData->data_as_S2C_Signup();
+		const auto SignupPacket = UserPacketData->data_as_S2C_Signup();
 
-		{
+		FString Message = UTF8_TO_TCHAR(SignupPacket->message()->c_str());
 
-		}
+		UE_LOG(LogTemp, Warning, TEXT("SignUp %s"), *Message);
+
+		OnSignUp.Broadcast(SignupPacket->success(), Message);
+
 	}
 	break;
 	}

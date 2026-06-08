@@ -12,8 +12,9 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTCPConnected);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnTCPDisconnected);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnLoginCallback, bool, bSuccess, const FString&, Message);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSignUpCallback, bool, bSuccess, const FString&, Message);
 
-//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnLogined, )
 
 
 class FSocket;
@@ -46,14 +47,19 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "TCP")
 	FOnTCPDisconnected OnTCPDisconnected;
 
+	UPROPERTY(BlueprintAssignable, Category = "TCP")
+	FOnLoginCallback OnLogin;
+
+	UPROPERTY(BlueprintAssignable, Category = "TCP")
+	FOnSignUpCallback OnSignUp;
+
 
 	UFUNCTION(BlueprintCallable, Category = "TCP")
 	void SendLogin(const FString& UserID, const FString& Password);
 
 
 	UFUNCTION(BlueprintCallable, Category = "TCP")
-	void SendSignUp(const FString& UserID, const FString& Password);
-
+	void SendSignUp(const FString& UserID, const FString& Password, const FString& Name);
 
 
 private:
