@@ -6,6 +6,7 @@
 #include "Subsystems/GameInstanceSubsystem.h"
 
 #include "Tickable.h"
+#include "Containers/Queue.h"
 
 #include "TCPClientSubsystem.generated.h"
 
@@ -18,6 +19,8 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnSignUpCallback, bool, bSuccess, 
 
 
 class FSocket;
+class FTCPRecvWorker;
+class FRunnableThread;
 
 
 /**
@@ -64,6 +67,14 @@ public:
 
 private:
 
+	FTCPRecvWorker* RecvWorker = nullptr;
+	FRunnableThread* RecvThread = nullptr;
+
+	//stl::queue<std::vector<char>>
+	TQueue<TArray<uint8>> RecvQueue;
+
+
+	//char Buffer[1024];
 	TArray<uint8> RecvBuffer;
 
 	void RecvAll();
