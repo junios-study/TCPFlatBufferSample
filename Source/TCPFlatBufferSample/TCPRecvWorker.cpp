@@ -14,12 +14,12 @@ FTCPRecvWorker::FTCPRecvWorker(FSocket* InServerSocket, TQueue<TArray<uint8>>& I
 
 uint32 FTCPRecvWorker::Run()
 {
-	while (!bStopRequested)
+	while (!bStopRequested || !ServerSocket)
 	{
 		uint32 Pending = 0;
 		if (!ServerSocket->HasPendingData(Pending) || Pending <= 0)
 		{
-			return 0;
+			continue;
 		}
 
 		//1. 2byte 헤더 받기
@@ -30,8 +30,10 @@ uint32 FTCPRecvWorker::Run()
 		//2바이트 받았냐?
 		while (TotalRecvBytes < (int32)sizeof(NetPacketSize))
 		{
+
 			if (!ServerSocket->Recv((uint8*)&NetPacketSize + TotalRecvBytes, sizeof(NetPacketSize) - TotalRecvBytes, RecvBytes) || RecvBytes == 0)
 			{
+
 				//Disconnect();
 				break;
 			}
