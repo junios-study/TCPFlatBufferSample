@@ -61,7 +61,7 @@ uint32 FTCPRecvWorker::Run()
 		RecvQueue.Enqueue(MoveTemp(RecvBuffer));
 	}
 
-	return uint32();
+	return 0;
 }
 
 void FTCPRecvWorker::Stop()

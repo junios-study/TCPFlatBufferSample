@@ -6,6 +6,8 @@
 #include "Sockets.h"
 #include "IPAddress.h"
 #include "Interfaces/IPv4/IPv4Address.h"
+#include "TCPRecvWorker.h"
+#include "HAL/RunnableThread.h"
 
 #include "UserPacket_generated.h"
 
@@ -46,6 +48,13 @@ bool UTCPClientSubsystem::Connect(const FString& Host, int32 Port)
 	}
 
 	ServerSocket->SetNonBlocking(false);
+	
+	//RecvThread 생성
+	RecvQueue.Empty();
+
+	RecvWorker = new FTCPRecvWorker(ServerSocket, RecvQueue); //Thread에서 실행 되는 함수
+	RecvThread = FRunnableThread::Create(RecvWorker, TEXT("TCPRecvWoker"));  //쓰레드 생성(함수
+
 
 	OnTCPConnected.Broadcast();
 
@@ -65,6 +74,23 @@ void UTCPClientSubsystem::Disconnect()
 
 		ServerSocket = nullptr;
 	}
+
+	if (RecvThread)
+	{
+		RecvThread->Kill(true);
+		delete RecvThread;
+		RecvThread = nullptr;
+	}
+
+	if (RecvWorker)
+	{
+		RecvWorker->Stop();
+		delete RecvWorker;
+		RecvWorker = nullptr;
+	}
+
+	RecvQueue.Empty();
+
 
 	OnTCPDisconnected.Broadcast();
 }
@@ -212,6 +238,15 @@ TStatId UTCPClientSubsystem::GetStatId() const
 
 void UTCPClientSubsystem::Tick(float DeltaTime)
 {
-	//메세지 구독
-	//큐 확인
+	if (!RecvWorker)
+	{
+		return;
+	}
+
+	TArray<uint8> Packet;
+	while (RecvQueue.Dequeue(Packet))
+	{
+		RecvBuffer = MoveTemp(Packet);
+		DispatchPacket();
+	}
 }
