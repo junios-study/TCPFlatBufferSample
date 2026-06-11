@@ -131,7 +131,7 @@ void UTCPClientSubsystem::SendSignUp(const FString& UserID, const FString& Passw
 
 	const FTCHARToUTF8 UserUTF8(*UserID);
 	const FTCHARToUTF8 PasswordUTF8(*Password);
-	const FTCHARToUTF8 NameUTF(*Password);
+	const FTCHARToUTF8 NameUTF(*Name);
 
 	auto LoginData = UserPacket::CreateC2S_SignupDirect(
 		Builder,
